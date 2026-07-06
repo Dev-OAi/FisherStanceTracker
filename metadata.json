@@ -1,0 +1,6 @@
+{
+  "name": "Fisher Stance Tracker",
+  "description": "Macroeconomic policy tracking platform recreating the 3-Component Fisher Stance, charting the Fed's stance (2000-2026), and analyzing policy shifts with server-side Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
