@@ -216,16 +216,16 @@ export const AICommentary: React.FC<AICommentaryProps> = ({
       doc.text(kpi.desc, xPos + cardWidth / 2, cardY + 17.5, { align: 'center' });
     });
 
-    // --- VECTOR MINI-CHART CONTAINER (Y = 57.5 to 111.5) ---
+    // --- VECTOR MINI-CHART CONTAINER (Y = 57.5 to 115.5) ---
     // CUSTOMIZATION TIP: To adjust the chart dimensions and positioning in the PDF, modify these parameters:
     // - chartYStart: The vertical starting position (Y) of the outer container box (default: 57.5)
-    // - chartHeight: The total height of the outer container box (increased from 27 to 54 for twice the vertical space)
+    // - chartHeight: The total height of the outer container box (increased from 27 to 58 for twice the vertical space and axis space)
     // - plotYStart: The vertical starting position of the line plotting area (default: 64.5)
     // - plotHeight: The height of the active plotting grid (increased from 19 to 44 to make the lines twice as tall/detailed)
     // - plotXStart: The horizontal starting position (X) of the line plotting area (default: 25)
     // - plotWidth: The width of the line plotting area (default: 167)
     const chartYStart = 57.5;
-    const chartHeight = 54;
+    const chartHeight = 58;
     const plotYStart = 64.5;
     const plotHeight = 44;
     const plotXStart = 25;
@@ -395,6 +395,62 @@ export const AICommentary: React.FC<AICommentaryProps> = ({
         doc.setTextColor(239, 68, 68);
         doc.text('SNAPSHOT ACTIVE', xSel, plotYStart - 1, { align: 'center' });
       }
+
+      // --- DRAW X AXIS LINE & YEAR TICKS ---
+      const xAxisY = plotYStart + plotHeight;
+      doc.setDrawColor(148, 163, 184); // Slate-400
+      doc.setLineWidth(0.25);
+      doc.line(plotXStart, xAxisY, plotXStart + plotWidth, xAxisY);
+
+      const xTicks: { label: string; x: number; index: number }[] = [];
+      const targetYears = [2000, 2004, 2008, 2013, 2017, 2022, 2026];
+      targetYears.forEach((ty) => {
+        const idx = pts.findIndex(p => p.date.startsWith(`${ty}-`));
+        if (idx !== -1) {
+          xTicks.push({
+            label: ty.toString(),
+            x: plotXStart + (idx / (pts.length - 1)) * plotWidth,
+            index: idx
+          });
+        }
+      });
+
+      // Fallback if target years are not found (e.g., custom date filter selection)
+      if (xTicks.length < 3) {
+        xTicks.length = 0; // Reset
+        const tickCount = 6;
+        const step = Math.max(1, Math.floor(pts.length / tickCount));
+        for (let i = 0; i < pts.length; i += step) {
+          const yearStr = pts[i].date.substring(0, 4);
+          xTicks.push({
+            label: yearStr,
+            x: plotXStart + (i / (pts.length - 1)) * plotWidth,
+            index: i
+          });
+        }
+        const lastIdx = pts.length - 1;
+        const lastYearStr = pts[lastIdx].date.substring(0, 4);
+        if (xTicks[xTicks.length - 1].index < lastIdx - 2) {
+          xTicks.push({
+            label: lastYearStr,
+            x: plotXStart + (lastIdx / (pts.length - 1)) * plotWidth,
+            index: lastIdx
+          });
+        }
+      }
+
+      xTicks.forEach((tick) => {
+        // Draw tick mark line (1.5mm long)
+        doc.setDrawColor(203, 213, 225); // Slate-300
+        doc.setLineWidth(0.2);
+        doc.line(tick.x, xAxisY, tick.x, xAxisY + 1.5);
+
+        // Draw Year text label (shifted down slightly)
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.0);
+        doc.setTextColor(100, 116, 139); // Slate-500
+        doc.text(tick.label, tick.x, xAxisY + 3.8, { align: 'center' });
+      });
     }
 
     // --- SECTIONS WITH VERTICAL ACCENT BARS (Image 1 style) ---
@@ -403,9 +459,9 @@ export const AICommentary: React.FC<AICommentaryProps> = ({
     const p2 = rawParagraphs[1] || "The commercial banking sector continues to price credit risk dynamically, balancing net interest margins with tightening underwriting standards under evolving Federal Reserve conditions.";
     const p3 = rawParagraphs[2] || "Labor markets are projected to stabilize in equilibrium as wage growth aligns with labor productivity, securing long-term price expectations.";
 
-    // Since the chart height has doubled (ending at 111.5mm), we start the subsequent sections
-    // at Y = 115.5mm (giving a comfortable 4mm spacing buffer).
-    let currentY = 115.5;
+    // Since the chart height has been expanded to 58mm (ending at 115.5mm), we start the subsequent sections
+    // at Y = 119.5mm (giving a comfortable 4mm spacing buffer).
+    let currentY = 119.5;
 
     const renderBriefingSection = (title: string, paragraph: string) => {
       // Accent vertical blue line
